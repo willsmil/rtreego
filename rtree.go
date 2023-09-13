@@ -295,8 +295,10 @@ func (tree *Rtree) chooseNode(n *node, e entry, level int) *node {
 	// find the entry whose bb needs least enlargement to include obj
 	diff := math.MaxFloat64
 	var chosen entry
+
+	bb := new(Rect)
 	for _, en := range n.entries {
-		bb := boundingBox(en.bb, e.bb)
+		boundingBox1(en.bb, e.bb, bb)
 		d := bb.Size() - en.bb.Size()
 		if d < diff || (d == diff && en.bb.Size() < chosen.bb.Size()) {
 			diff = d
@@ -362,9 +364,9 @@ func (n *node) computeBoundingBox() (bb Rect) {
 		return
 	}
 
-	bb = boundingBox(n.entries[0].bb, n.entries[1].bb)
+	boundingBox1(n.entries[0].bb, n.entries[1].bb, &bb)
 	for _, e := range n.entries[2:] {
-		bb = boundingBox(bb, e.bb)
+		boundingBox1(bb, e.bb, &bb)
 	}
 	return
 }
@@ -479,9 +481,12 @@ func assignGroup(e entry, left, right *node) {
 func (n *node) pickSeeds() (int, int) {
 	left, right := 0, 1
 	maxWastedSpace := -1.0
+	d := 0.0
+	bb := new(Rect)
 	for i, e1 := range n.entries {
 		for j, e2 := range n.entries[i+1:] {
-			d := boundingBox(e1.bb, e2.bb).Size() - e1.bb.Size() - e2.bb.Size()
+			boundingBox1(e1.bb, e2.bb, bb)
+			d = bb.Size() - e1.bb.Size() - e2.bb.Size()
 			if d > maxWastedSpace {
 				maxWastedSpace = d
 				left, right = i, j+i+1
@@ -496,9 +501,13 @@ func pickNext(left, right *node, entries []entry) (next int) {
 	maxDiff := -1.0
 	leftBB := left.computeBoundingBox()
 	rightBB := right.computeBoundingBox()
+	d1, d2 := 0.0, 0.0
+	b1, b2 := new(Rect), new(Rect)
 	for i, e := range entries {
-		d1 := boundingBox(leftBB, e.bb).Size() - leftBB.Size()
-		d2 := boundingBox(rightBB, e.bb).Size() - rightBB.Size()
+		boundingBox1(leftBB, e.bb, b1)
+		boundingBox1(rightBB, e.bb, b2)
+		d1 = b1.Size() - leftBB.Size()
+		d2 = b2.Size() - rightBB.Size()
 		d := math.Abs(d1 - d2)
 		if d > maxDiff {
 			maxDiff = d

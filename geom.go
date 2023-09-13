@@ -355,3 +355,32 @@ func boundingBox(r1, r2 Rect) (bb Rect) {
 	}
 	return
 }
+
+// boundingBox1 constructs the smallest rectangle bb containing both r1 and r2.
+func boundingBox1(r1, r2 Rect, bb *Rect)  {
+	if bb == nil {
+		return
+	}
+	dim := len(r1.p)
+	if len(r2.p) != dim {
+		panic(DimError{len(r1.p), len(r2.p)})
+	}
+	if len(bb.q) != dim {
+		bb.p = make([]float64, dim)
+		bb.q = make([]float64, dim)
+	}
+
+	for i := 0; i < dim; i++ {
+		if r1.p[i] <= r2.p[i] {
+			bb.p[i] = r1.p[i]
+		} else {
+			bb.p[i] = r2.p[i]
+		}
+		if r1.q[i] <= r2.q[i] {
+			bb.q[i] = r2.q[i]
+		} else {
+			bb.q[i] = r1.q[i]
+		}
+	}
+	return
+}
